@@ -19,6 +19,7 @@ class MainWindow(gtk.Window):
         notebook = gtk.Notebook()
         label = gtk.Label("test")
         notebook.append_page(label)
+        notebook.set_show_tabs(False)
 
         all_hpaned.add1(treeview)
         all_hpaned.add2(notebook)
@@ -28,12 +29,14 @@ class MainWindow(gtk.Window):
 
         self.set_title('GMTune')
         self.resize(800,600)
+        settings = gtk.settings_get_default()
+        settings.props.gtk_button_images=True
 
     def create_top_hbox(self):
         n1_hbox = gtk.HBox()
-        prev_button = gtk.Button("Prev")
-        play_button = gtk.Button("Play")
-        next_button = gtk.Button("Next")
+        prev_button = gtk.Button(stock=gtk.STOCK_MEDIA_PREVIOUS)
+        play_button = gtk.Button(stock=gtk.STOCK_MEDIA_PLAY)
+        next_button = gtk.Button(stock=gtk.STOCK_MEDIA_NEXT)
 
         prev_button.connect("clicked", self.prev_bt_clicked)
         play_button.connect("clicked", self.play_bt_clicked)
