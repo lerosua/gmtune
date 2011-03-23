@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os,sys
-from mainwindow import *
+from gmtune import *
 
 def main():
-    win = MainWindow();
-    win.show_all()
+
+    gmtune = GMTune()
+    gmtune.mainwin.show_all()
     gtk.main()
 
 
