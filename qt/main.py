@@ -8,7 +8,8 @@ def main():
     app = QtGui.QApplication(sys.argv)
     qmtune = QMTune();
     qmtune.mainwin.show()
-    sys.exit(app.exec_())
+    app.exec_()
+    #sys.exit(app.exec_())
 
 
 if __name__ == '__main__':
