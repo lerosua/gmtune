@@ -12,6 +12,7 @@ class GMTune():
         self.init_mainwin()
         self.init_status_icon()
         self.init_category_treeview()
+        self.init_notebook()
 
         settings = gtk.settings_get_default()
         settings.props.gtk_button_images=True
@@ -20,47 +21,46 @@ class GMTune():
         #main window
         self.mainwin = gtk.Window()
         self.mainwin.hided = False
-        #self.mainwin.connect('destory',gtk.main_quit)
+        self.mainwin.connect('destroy',gtk.main_quit)
 
         #just test ui
         self.all_vbox = gtk.VBox()
-        n1_hbox = self.create_top_hbox()
+        n1_hbox = self.init_top_hbox()
         self.all_vbox.pack_start(n1_hbox,False)
-        all_hpaned = gtk.HPaned()
+        self.all_hpaned = gtk.HPaned()
 
-        self.category_scrolledwindow = gtk.ScrolledWindow()
-        self.category_scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
-        self.category_scrolledwindow.set_size_request(150,600)
-
-        notebook = gtk.Notebook()
-        label = gtk.Label("test")
-        notebook.append_page(label)
-        notebook.set_show_tabs(False)
-
-        all_hpaned.pack1(self.category_scrolledwindow)
-        all_hpaned.pack2(notebook)
-
-        self.all_vbox.pack_start(all_hpaned)
+        self.all_vbox.pack_start(self.all_hpaned)
         self.mainwin.add(self.all_vbox)
 
         #main window attribute setting
         self.mainwin.resize(800,600)
-        self.mainwin.set_title("GMTune - 0.1")
+        self.mainwin.set_title("GMTune")
         self.mainwin.set_icon(ICON_DICT["gmbox"])
-        #self.mainwin.show_all()
 
     def init_category_treeview(self):
+        category_scrolledwindow = gtk.ScrolledWindow()
+        category_scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
+        category_scrolledwindow.set_size_request(150,600)
         category_treeview = CategoryTreeview(self)
-        self.category_scrolledwindow.add(category_treeview)
-        self.category_scrolledwindow.show_all()
+        category_scrolledwindow.add(category_treeview)
+        category_scrolledwindow.show_all()
+        self.all_hpaned.pack1(category_scrolledwindow)
+
+    def init_notebook(self):
+        self.notebook = gtk.Notebook()
+        self.music_store_treeview = PlaylistTreeview(self)
+        self.notebook.append_page(self.music_store_treeview)
+        self.notebook.set_show_tabs(False)
+        self.all_hpaned.pack2(self.notebook)
 
     def init_status_icon(self):
         self.status_icon = gtk.StatusIcon()
         self.status_icon.set_from_pixbuf(ICON_DICT["gmbox"])
         self.status_icon.connect("activate", self.on_status_icon_activate)
+        self.status_icon.connect("popup-menu",self.on_status_icon_menu)
         #self.status_icon.set_visible(CONFIG["show_status_icon"])
 
-    def create_top_hbox(self):
+    def init_top_hbox(self):
         n1_hbox = gtk.HBox()
         prev_button = gtk.Button(stock=gtk.STOCK_MEDIA_PREVIOUS)
         play_button = gtk.Button(stock=gtk.STOCK_MEDIA_PLAY)
@@ -76,7 +76,19 @@ class GMTune():
         timeline = gtk.HScale()
         n1_hbox.pack_start(timeline)
 
+        self.search_entry = gtk.Entry()
+        self.search_entry.set_property("secondary-icon-stock",gtk.STOCK_CLEAR)
+        self.search_entry.connect("icon-press", self.search_entry_icon)
+        self.search_entry.connect("activate", self.search_entry_do)
+        n1_hbox.pack_start(self.search_entry,False)
+
         return n1_hbox
+
+    def search_entry_icon(self,entry,icon_pos,event):
+        self.search_entry.set_text("")
+
+    def search_entry_do(self, entry):
+        print "search entry"
 
     def prev_bt_clicked(self,widget):
         print "prev button clicked"
@@ -88,9 +100,25 @@ class GMTune():
         print "next button clicked"
 
 
+    def load_music_store(self):
+        print "load"
+        #just fixme
+
     def on_status_icon_activate(self, widget, data=None):
         if self.mainwin.hided:
             self.mainwin.show()
         else:
             self.mainwin.hide()
         self.mainwin.hided = not self.mainwin.hided
+
+    def on_status_icon_menu(self,statusicon,button,activate_time):
+        popup_menu = gtk.Menu()
+        quit_item = gtk.ImageMenuItem(gtk.STOCK_QUIT)
+        quit_item.connect("activate", self.on_quit)
+        popup_menu.append(quit_item)
+        popup_menu.show_all()
+        time = gtk.get_current_event_time()
+        popup_menu.popup(None, None, None, 0, time)
+
+    def on_quit(self,win,evt=gtk.gdk.DELETE):
+        gtk.main_quit(win)

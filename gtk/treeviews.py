@@ -102,6 +102,8 @@ class CategoryTreeview(gtk.TreeView):
         #    self.gmbox.do_chartlisting(node.name, node.type)
            
     def on_button_press_event(self, widget, event, data=None):
+        if event.type == gtk.gdk.BUTTON_PRESS:
+            print "select "
         if event.type == gtk.gdk._2BUTTON_PRESS:
             model, rows = self.get_selection().get_selected_rows()            
             if len(rows) == 0:
@@ -129,3 +131,232 @@ class CategoryTreeview(gtk.TreeView):
             self.analyze_and_search(node)
         self.get_selection().unselect_all()  
  
+
+class PlaylistTreeview(gtk.TreeView): 
+    
+    def __init__(self, gmbox):
+        gtk.TreeView.__init__(self)
+        self.gmbox = gmbox
+        self.liststore = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        self.ids = []
+        self.init_column()                
+        self.set_model(self.liststore)
+        self.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        self.connect("button-press-event", self.on_button_press_event)
+        
+    def init_column(self):
+                
+        def pixbuf_cell_data_func(column, cell, model, iter, data=None):
+            value = model.get_value(iter, 0)
+            cell.set_property("pixbuf", value.icon)
+            
+        def text_cell_data_func(column, cell, model, iter, data=None):
+            song = model.get_value(iter, 0)
+            cell.set_property("text", getattr(song, data))
+        
+        # icon and name
+        renderer = gtk.CellRendererPixbuf()
+        column = gtk.TreeViewColumn("名称")
+        column.pack_start(renderer, False)
+        column.set_cell_data_func(renderer, pixbuf_cell_data_func)        
+        renderer = gtk.CellRendererText()
+        column.pack_start(renderer)
+        column.set_cell_data_func(renderer, text_cell_data_func, "name")        
+        column.set_resizable(True)
+        column.set_expand(True)
+        self.append_column(column) 
+        
+        text = ["艺术家", "专辑", "状态"]
+        data = ["artist", "album", "play_status"]        
+        for i in range(len(text)):
+            renderer = gtk.CellRendererText()            
+            column = gtk.TreeViewColumn(text[i], renderer)
+            column.set_cell_data_func(renderer, text_cell_data_func, data[i])
+            column.set_resizable(True)
+            column.set_expand(True)
+            self.append_column(column)
+            
+    def append_songs(self, songs):
+        for song in songs:
+            if song.id not in self.ids:
+                self.ids.append(song.id)
+                self.liststore.append((song,))
+            
+    def on_button_press_event(self, widget, event, data=None):
+        if event.type == gtk.gdk._2BUTTON_PRESS:
+            model, rows = self.get_selection().get_selected_rows()
+            if len(rows) == 0:
+                return False   
+            for path in rows:
+                iter = model.get_iter(path)
+                value = model.get_value(iter, 0)
+                #self.gmbox.play_songs([value])
+        elif event.button == 3:
+            songs = []
+            model, rows = self.get_selection().get_selected_rows()
+            for path in rows:
+                iter = model.get_iter(path)
+                value = model.get_value(iter, 0)
+                if isinstance(value, Song):
+                    songs.append(value)
+            #self.gmbox.popup_content_menu(songs, event, self)
+            return True
+        
+    def get_next_song(self, song):
+        length = len(self.liststore)
+        for i in range(length):
+            if song == self.liststore[i][0]:            
+                if i < length - 1:
+                    # not the last one
+                    return self.liststore[i + 1][0]
+                break
+        # just return the first one
+        return self.liststore[0][0]
+
+    def get_last_song(self, song):
+        length = len(self.liststore)
+        # is the first one, then return last one
+        if song == self.liststore[0][0]:
+            return self.liststore[length - 1][0]
+        
+        for i in range(length):
+            if song == self.liststore[i][0]:   
+                return self.liststore[i - 1][0]
+
+    def remove_songs(self, songs):
+        for row in self.liststore:
+            song = row[0]
+            if song in songs:
+                iter = self.liststore.get_iter(row.path)
+                self.liststore.remove(iter)
+                self.ids.remove(song.id)
+        
+    def clear_songs(self):
+        self.liststore.clear()
+        self.ids = []
+        
+class DownlistTreeview(gtk.TreeView): 
+    
+    def __init__(self, gmbox):
+        gtk.TreeView.__init__(self)
+        self.gmbox = gmbox
+        self.liststore = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        self.ids = []
+        self.init_column()                
+        self.set_model(self.liststore)
+        self.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        self.connect("button-press-event", self.on_button_press_event)
+        
+    def init_column(self):
+                
+        def pixbuf_cell_data_func(column, cell, model, iter, data=None):
+            value = model.get_value(iter, 0)
+            cell.set_property("pixbuf", value.icon)
+            
+        def text_cell_data_func(column, cell, model, iter, data=None):
+            song = model.get_value(iter, 0)
+            cell.set_property("text", getattr(song, data))
+        
+        # icon and name
+        renderer = gtk.CellRendererPixbuf()
+        column = gtk.TreeViewColumn("名称")
+        column.pack_start(renderer, False)
+        column.set_cell_data_func(renderer, pixbuf_cell_data_func)        
+        renderer = gtk.CellRendererText()
+        column.pack_start(renderer)
+        column.set_cell_data_func(renderer, text_cell_data_func, "name")        
+        column.set_resizable(True)
+        column.set_expand(True)
+        self.append_column(column) 
+        
+        text = ["艺术家", "专辑", "下载进度", "状态"]
+        data = ["artist", "album", "down_process", "down_status"]        
+        for i in range(len(text)):
+            renderer = gtk.CellRendererText()            
+            column = gtk.TreeViewColumn(text[i], renderer)
+            column.set_cell_data_func(renderer, text_cell_data_func, data[i])
+            column.set_resizable(True)
+            column.set_expand(True)
+            self.append_column(column)
+            
+    def append_songs(self, songs):
+        for song in songs:
+            if song.id not in self.ids:
+                song.remove_lock = False
+                self.ids.append(song.id)
+                self.liststore.append((song,))
+            
+    def on_button_press_event(self, widget, event, data=None):
+        if event.type == gtk.gdk._2BUTTON_PRESS:
+            model, rows = self.get_selection().get_selected_rows()
+            if len(rows) == 0:
+                return False   
+            for path in rows:
+                iter = model.get_iter(path)
+                value = model.get_value(iter, 0)
+                #self.gmbox.play_songs([value])
+        elif event.button == 3:
+            songs = []
+            model, rows = self.get_selection().get_selected_rows()
+            for path in rows:
+                iter = model.get_iter(path)
+                value = model.get_value(iter, 0)
+                if isinstance(value, Song):
+                    songs.append(value)
+            #self.gmbox.popup_content_menu(songs, event, self)
+            return True
+        
+    def get_waitting_song(self):
+        for row in self.liststore:
+            song = row[0]
+            if song.down_status in ["等待中"]:
+                return song
+
+    def start_downloader(self):
+        if not hasattr(self, "downloaders"):
+            self.downloaders = 0
+        if not hasattr(self, "refreshing"):
+            self.refreshing = False
+        
+        while self.downloaders < 3:
+            song = self.get_waitting_song()
+            if song is None:
+                break
+            
+            song.down_status = "开始下载"
+            Downloader(song, self.downloader_callback).start()
+            self.downloaders += 1
+            if not self.refreshing:
+                gobject.timeout_add(1000, self.refresh_treeview)
+                self.refreshing = True
+                    
+    def downloader_callback(self):
+        self.downloaders -= 1
+        self.start_downloader()
+
+    def refresh_treeview(self):
+        self.queue_draw()
+        if self.downloaders == 0:
+            self.refreshing = False
+            return False
+        else:
+            return True
+        
+    def remove_songs(self, songs):
+        for row in self.liststore:
+            song = row[0]
+            if song.remove_lock:
+                continue
+            if song in songs:
+                iter = self.liststore.get_iter(row.path)
+                self.liststore.remove(iter)
+                self.ids.remove(song.id)
+        
+    def clear_songs(self):
+        for row in self.liststore:
+            song = row[0]
+            if song.remove_lock:
+                continue            
+            iter = self.liststore.get_iter(row.path)
+            self.liststore.remove(iter)
+            self.ids.remove(song.id)
