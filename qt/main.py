@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os,sys
-from mainwindow import *
+from qmtune import *
 
 def main():
     app = QtGui.QApplication(sys.argv)
-    win = MainWindow();
-    win.show()
+    qmtune = QMTune();
+    qmtune.mainwin.show()
     sys.exit(app.exec_())
 
 
